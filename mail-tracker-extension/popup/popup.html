@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Mail Tracker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            width: 250px;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f9f9f9;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .logo img {
+            height: 32px;
+            width: 32px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="logo">
+        <img src="icons/icon48.png" alt="logo" />
+        <span class="title">Mail Tracker</span>
+    </div>
+
+    <button class="btn" id="connectBtn">Connect Gmail</button>
+    <div class="status" id="statusText">Not connected</div>
+
+    <script>
+        const connectBtn = document.getElementById('connectBtn');
+        const statusText = document.getElementById('statusText');
+
+        // Just placeholder logic for UI testing
+        connectBtn.addEventListener('click', () => {
+            statusText.innerText = '🔗 Connecting...';
+
+            setTimeout(() => {
+                statusText.innerText = '✅ Gmail Connected';
+            }, 1500);
+        });
+    </script>
+</body>
+
+</html>
