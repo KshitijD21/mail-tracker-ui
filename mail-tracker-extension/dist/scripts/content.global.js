@@ -1,13 +1,13 @@
 "use strict";
 (() => {
   // mail-tracker-extension/src/scripts/keyGenerate.ts
-  function generateK(length = 16) {
+  function generateRandomKey(length = 16) {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const array = new Uint8Array(length);
     crypto.getRandomValues(array);
     return Array.from(array).map((byte) => charset[byte % charset.length]).join("");
   }
-  async function generateP(userId, timestamp, key) {
+  async function generateTrackingId(userId, timestamp, key) {
     const encoder = new TextEncoder();
     const message = encoder.encode(`${userId}:${timestamp}`);
     const keyData = encoder.encode(key);
@@ -21,84 +21,139 @@
     const signature = await crypto.subtle.sign("HMAC", cryptoKey, message);
     return Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
   }
-  async function generateKey() {
-    const u = "user123";
-    const t = Math.floor(Date.now() / 1e3);
-    const k = generateK();
-    const p = await generateP(u, t, k);
-    return p;
-  }
 
   // mail-tracker-extension/src/scripts/content.ts
-  var currentTrackingId = "";
-  function interceptGmailSend() {
-    const sendButton = document.querySelector(
+  var token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0NzcwMjE0MiwiZXhwIjoxNzQ5NTAyMTQyfQ.VFHdqwKLseOge5A20zP_6YKwkZYrEkDrc70U_6mqM9k";
+  var composeRegistry = /* @__PURE__ */ new Map();
+  function createComposeBox(el, trackingId, k, u, t) {
+    const id = el.getAttribute("data-compose-id");
+    if (!id) return null;
+    const subject = el.querySelector(
+      'input[name="subjectbox"]'
+    );
+    const to = el.querySelector('[aria-label="To"]');
+    const body = el.querySelector(
+      '[aria-label="Message Body"][contenteditable="true"]'
+    );
+    if (!subject || !to || !body) return null;
+    return {
+      id,
+      subjectInput: subject.value,
+      toInput: extractRecipients(to),
+      bodyElement: body,
+      trackingObject: {
+        trackingId,
+        k,
+        u,
+        t
+      }
+    };
+  }
+  function extractRecipients(el) {
+    const chips = el.querySelectorAll('[role="option"][data-hovercard-id]');
+    return Array.from(chips).map((chip) => chip.getAttribute("data-hovercard-id") || "").filter((email) => email !== "");
+  }
+  function finaliseDataFromComposeBox(composeEl, trackingId, k, u, t) {
+    if (!composeEl) {
+      console.warn("\u26A0\uFE0F No compose element found.");
+      return;
+    }
+    const box = createComposeBox(composeEl, trackingId, k, u, t);
+    console.log("whole box data \u{1F680} ", box);
+    if (!box) {
+      console.warn("\u26A0\uFE0F Could not construct ComposeBox.");
+      return;
+    }
+    insertImageIntoEmail(trackingId, box.bodyElement);
+    console.log(
+      "\u2705 Pixel inserted into compose box:",
+      box.id,
+      box.subjectInput,
+      box.toInput
+    );
+    return box;
+  }
+  function attachTrackerOnSendButton() {
+    const sendButton = document.querySelectorAll(
       "div.T-I.J-J5-Ji.aoO.v7.T-I-atl.L3"
     );
-    if (!sendButton || sendButton.dataset.trackerInjected === "true") return;
-    sendButton.dataset.trackerInjected = "true";
-    const clonedButton = sendButton.cloneNode(true);
-    sendButton.replaceWith(clonedButton);
-    clonedButton.addEventListener("click", async function handler(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      clonedButton.removeEventListener("click", handler);
-      if (currentTrackingId) {
-        try {
-          const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0Nzc3MzAwNiwiZXhwIjoxNzQ5NTczMDA2fQ.V_qOXf2YtasJx6Ne6zLLwOJD22kzI6hpy0CCH5QZciI";
-          await fetch("http://localhost:8080/tracking/ids", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
-            },
-            body: currentTrackingId
-          });
-          console.log("\u2705 Tracking ID uploaded to server");
-        } catch (error) {
-          console.error("\u274C Failed to upload tracking ID", error);
+    console.log("Number of send buttons:", sendButton.length);
+    sendButton.forEach((send) => {
+      if (!send || send.dataset.trackerInjected === "true") return;
+      send.dataset.trackerInjected = "true";
+      const clonedButton = send.cloneNode(true);
+      send.replaceWith(clonedButton);
+      clonedButton.addEventListener("click", async function handler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        clonedButton.removeEventListener("click", handler);
+        const k = generateRandomKey();
+        const u = "kshitij@gmail.com";
+        const t = Date.now();
+        const trackingId = await generateTrackingId(u, t, k);
+        const composeBoxEl = clonedButton.closest("[data-compose-id]");
+        const box = finaliseDataFromComposeBox(
+          composeBoxEl,
+          trackingId,
+          k,
+          u,
+          t
+        );
+        if (box != void 0) {
+          registerTrackingId(box);
+        } else {
+          console.warn("\u274C ComposeBox creation failed");
         }
-      }
-      sendButton.click();
+        send.click();
+      });
     });
   }
-  function insertImageIntoEmail() {
-    const composeButton = document.querySelector(
-      ".T-I.T-I-KE.L3"
-    );
-    if (composeButton && !composeButton.dataset.trackerRenamed) {
-      composeButton.dataset.trackerRenamed = "true";
-    }
-    if (!composeButton || composeButton.dataset.trackerInjected === "true")
-      return;
-    composeButton.dataset.trackerInjected = "true";
-    console.log("get inside insertImageIntoEmail \u{1F60E} ", composeButton);
-    const redPixelBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2NkYGBgYGBg+M+ABCEGBgYGJRYwGoaYBgB2hAFZkIo12gAAAABJRU5ErkJggg==";
-    composeButton.addEventListener("click", async function handler(e) {
-      currentTrackingId = await generateKey();
-      console.log("\u{1F4E6} Tracked value:", currentTrackingId);
-      const trackingUrl = `http://localhost:8080/track/${currentTrackingId}`;
-      setTimeout(() => {
-        const emailBodies = document.querySelectorAll(
-          '[aria-label="Message Body"]'
-        );
-        emailBodies.forEach((body) => {
-          const htmlBody = body;
-          if (htmlBody.dataset.pixelInjected === "true") return;
-          htmlBody.dataset.pixelInjected = "true";
-          const img = document.createElement("img");
-          img.src = trackingUrl;
-          img.width = 10;
-          img.height = 10;
-          img.style.backgroundColor = "red";
-          img.style.border = "1px solid black";
-          img.style.display = "inline-block";
-          img.alt = "debug pixel";
-          htmlBody.appendChild(img);
-          console.log("\u{1F5BC}\uFE0F Tracking pixel injected");
-        });
-      }, 300);
+  function registerTrackingId(box) {
+    const payload = {
+      trackingObject: box.trackingObject,
+      to: box.toInput,
+      subject: box.subjectInput
+    };
+    composeRegistry.set(box.trackingObject.trackingId, box);
+    fetch("http://localhost:8080/tracking/ids", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    }).then(async (response) => {
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      return response.json();
+    }).then((data) => {
+      if (!data) return;
+      console.log(data);
+      if (data.status === true) {
+        composeRegistry.delete(data.trackingId);
+        console.log("\u2705 Tracking ID uploaded successfully:", data.trackingId);
+      } else {
+        const reDeclare = composeRegistry.get(data?.trackingId);
+        if (reDeclare) registerTrackingId(reDeclare);
+        console.warn("\u26A0\uFE0F Server responded with failure. ID:", data.trackingId);
+      }
+    }).catch((error) => {
+      console.error("\u274C Network or unexpected error:", error);
     });
+  }
+  function insertImageIntoEmail(trackingId, element) {
+    const trackingUrl = `https://mail-tracker-xy4c.onrender.com/track/${trackingId}`;
+    const img = document.createElement("img");
+    img.src = trackingUrl;
+    img.width = 10;
+    img.height = 10;
+    img.style.backgroundColor = "red";
+    img.style.border = "1px solid black";
+    img.style.display = "inline-block";
+    img.alt = "debug pixel";
+    element.appendChild(img);
   }
   function highlightGmailHeader() {
     const headerBar = document.querySelector("header");
@@ -109,7 +164,7 @@
     }
   }
   var sendButtonObserver = new MutationObserver(() => {
-    interceptGmailSend();
+    attachTrackerOnSendButton();
   });
   sendButtonObserver.observe(document.body, {
     childList: true,
@@ -121,18 +176,6 @@
   headerObserver.observe(document.body, {
     childList: true,
     subtree: true
-  });
-  var insertImageIntoEmailObserver = new MutationObserver(() => {
-    insertImageIntoEmail();
-  });
-  insertImageIntoEmailObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  window.addEventListener("load", () => {
-    interceptGmailSend();
-    highlightGmailHeader();
-    insertImageIntoEmail();
   });
 })();
 //# sourceMappingURL=content.global.js.map
