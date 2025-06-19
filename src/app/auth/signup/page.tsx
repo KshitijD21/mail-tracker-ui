@@ -3,16 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { registerUser } from "@/lib/api";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 import Link from "next/link";
-import React, { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
-interface AuthFormProps {
-  mode: "Signup" | "Login";
-  onSubmit: (data: { email: string; password: string }) => void;
-  resetForm?: boolean;
-}
+// interface AuthFormProps {
+//   mode: "Signup" | "Login";
+//   onSubmit: (data: { email: string; password: string }) => void;
+//   resetForm?: boolean;
+// }
 
-export default function signUp() {
+export default function SignUp() {
   const { resolvedTheme } = useTheme();
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,7 +41,7 @@ export default function signUp() {
       <div className="flex flex-1 p-3 ">
         <div className="flex-1 flex flex-col">
           <div className="p-3">
-            <img
+            <Image
               src={
                 resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"
               }
@@ -106,7 +107,7 @@ export default function signUp() {
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center overflow-hidden">
-          <img
+          <Image
             src="/auth-image3.png"
             alt="Dashboard Illustration"
             className="w-full h-full object-fill rounded-2xl"

@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loginUser } from "@/lib/api";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
-import React, { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
-export default function signIn() {
+export default function SignIn() {
   const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +40,7 @@ export default function signIn() {
         // setError("Invalid credentials or server error");
         setMessage("");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Login Failed:", err);
       setError("Invalid credentials or server error");
       setMessage("");
@@ -51,7 +52,7 @@ export default function signIn() {
       {" "}
       <div className="flex-1 flex flex-col">
         <div className="flex p-3">
-          <img
+          <Image
             src={
               resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"
             }
@@ -109,7 +110,7 @@ export default function signIn() {
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center overflow-hidden p-2">
-        <img
+        <Image
           src="/auth-image4.png"
           alt="Dashboard Illustration"
           className="w-full h-full object-contain rounded-2xl"

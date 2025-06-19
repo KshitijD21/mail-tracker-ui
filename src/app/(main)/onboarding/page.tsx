@@ -1,31 +1,16 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { fetchGoogleOAuthUrl } from "@/lib/api";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/router";
-import React from "react";
+// src/app/(main)/onboarding/page.tsx
+"use client"
+import { Suspense } from "react";
+import Onboarding from "./components/onboarding";
 
-function Onboarding() {
-  const searchParams = useSearchParams();
-  const status = searchParams.get("status");
-  console.log(status);
+// const Onboarding = dynamic(() => import("@/app/(main)/onboarding/components/onboarding"), {
+//   ssr: false,
+// });
 
-  const onButtonClicked = async () => {
-    try {
-      const url = await fetchGoogleOAuthUrl();
-      window.location.href = url;
-    } catch (error) {
-      console.error("Failed to start Google OAuth:", error);
-    }
-  };
-
+export default function OnboardingPage() {
   return (
-    <div className="flex flex-col h-full w-full">
-      <div>
-        <Button onClick={() => onButtonClicked()}>Connect to Google</Button>
-      </div>
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Onboarding />
+    </Suspense>
   );
 }
-
-export default Onboarding;

@@ -1,8 +1,5 @@
 "use client";
 import Header from "@/components/header";
-import { ModeToggle } from "@/components/mode-toggle";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
 
 export default function Home() {
   return (

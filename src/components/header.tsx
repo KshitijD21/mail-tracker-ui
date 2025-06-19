@@ -1,11 +1,10 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useEffect, useState } from "react";
 
 export default function Header() {
-  const { resolvedTheme } = useTheme();
+  // const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
