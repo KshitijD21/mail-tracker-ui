@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // mail-tracker-extension/src/scripts/keyGenerate.ts
+  // src/scripts/keyGenerate.ts
   function generateRandomKey(length = 16) {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const array = new Uint8Array(length);
@@ -22,7 +22,7 @@
     return Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
   }
 
-  // mail-tracker-extension/src/scripts/content.ts
+  // src/scripts/content.ts
   var token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0NzcwMjE0MiwiZXhwIjoxNzQ5NTAyMTQyfQ.VFHdqwKLseOge5A20zP_6YKwkZYrEkDrc70U_6mqM9k";
   var composeRegistry = /* @__PURE__ */ new Map();
   function createComposeBox(el, trackingId, k, u, t) {
@@ -164,7 +164,9 @@
     }
   }
   var sendButtonObserver = new MutationObserver(() => {
-    attachTrackerOnSendButton();
+    if (isAuthenticated) {
+      attachTrackerOnSendButton();
+    }
   });
   sendButtonObserver.observe(document.body, {
     childList: true,
@@ -173,9 +175,90 @@
   var headerObserver = new MutationObserver(() => {
     highlightGmailHeader();
   });
+  async function initExtension() {
+    await initAuthState();
+    highlightGmailHeader();
+    updateTrackingUI();
+  }
+  initExtension();
   headerObserver.observe(document.body, {
     childList: true,
     subtree: true
   });
+  var currentAuthState = null;
+  var isAuthenticated = false;
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "authStateChanged") {
+      currentAuthState = message.authData;
+      isAuthenticated = !!message.authData;
+      console.log("Auth state updated:", { isAuthenticated, user: currentAuthState?.email });
+      updateTrackingUI();
+      sendResponse({ success: true });
+    }
+    if (message.action === "cleanup") {
+      cleanupTracking();
+      sendResponse({ success: true });
+    }
+  });
+  async function initAuthState() {
+    try {
+      const result = await chrome.storage.local.get(["authState", "isAuthenticated"]);
+      if (result.isAuthenticated && result.authState) {
+        currentAuthState = result.authState;
+        isAuthenticated = true;
+        console.log("Loaded auth state:", currentAuthState?.email);
+      }
+    } catch (error) {
+      console.error("Failed to load auth state:", error);
+    }
+  }
+  function addTrackingToCompose(el) {
+    if (!isAuthenticated || el.querySelector(".tracking-toggle")) {
+      return;
+    }
+    const toolbar = el.querySelector('[aria-label="more send options"]')?.parentElement;
+    if (!toolbar) return;
+    const trackingToggle = document.createElement("div");
+    trackingToggle.className = "tracking-toggle";
+    trackingToggle.innerHTML = `
+    <button style="
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    ">
+      \u{1F4E7} Tracking ON
+    </button>
+  `;
+    toolbar.appendChild(trackingToggle);
+  }
+  function updateTrackingUI() {
+    const composeElements = document.querySelectorAll('[role="dialog"][aria-label*="compose"]');
+    composeElements.forEach((el) => {
+      const htmlEl = el;
+      if (isAuthenticated) {
+        addTrackingToCompose(htmlEl);
+      } else {
+        removeTrackingFromCompose(htmlEl);
+      }
+    });
+  }
+  function removeTrackingFromCompose(el) {
+    const existingToggle = el.querySelector(".tracking-toggle");
+    if (existingToggle) {
+      existingToggle.remove();
+    }
+  }
+  function cleanupTracking() {
+    document.querySelectorAll(".tracking-toggle").forEach((el) => el.remove());
+    composeRegistry.clear();
+  }
 })();
 //# sourceMappingURL=content.global.js.map

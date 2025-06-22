@@ -1,8 +1,4 @@
-import { error } from "console";
 import { generateRandomKey, generateTrackingId } from "./keyGenerate";
-import { Boxes } from "lucide-react";
-import { json } from "stream/consumers";
-import { promises } from "dns";
 
 // const token = localStorage.getItem("authToken");
 const token =
@@ -267,7 +263,9 @@ function highlightGmailHeader() {
 }
 
 const sendButtonObserver = new MutationObserver(() => {
-  attachTrackerOnSendButton();
+  if (isAuthenticated) {
+    attachTrackerOnSendButton();
+  }
 });
 
 sendButtonObserver.observe(document.body, {
@@ -278,6 +276,16 @@ sendButtonObserver.observe(document.body, {
 const headerObserver = new MutationObserver(() => {
   highlightGmailHeader();
 });
+
+// Initialize extension
+async function initExtension() {
+  await initAuthState();
+  highlightGmailHeader();
+  updateTrackingUI();
+}
+
+// Start the extension
+initExtension();
 
 headerObserver.observe(document.body, {
   childList: true,
@@ -300,3 +308,108 @@ headerObserver.observe(document.body, {
 // });
 
 // http://localhost:8080/track/6dc553055dfb0d013fc0fb99bee829bc41674d122701469afadc59c02625cad0
+
+// Auth state management
+interface AuthData {
+  id: number;
+  email: string;
+  name: string;
+  avatar: string;
+  token: string;
+}
+
+let currentAuthState: AuthData | null = null;
+let isAuthenticated = false;
+
+// Listen for auth state changes from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'authStateChanged') {
+    currentAuthState = message.authData;
+    isAuthenticated = !!message.authData;
+
+    console.log('Auth state updated:', { isAuthenticated, user: currentAuthState?.email });
+
+    // Update UI based on auth state
+    updateTrackingUI();
+    sendResponse({ success: true });
+  }
+
+  if (message.action === 'cleanup') {
+    // Handle cleanup when extension is turned off
+    cleanupTracking();
+    sendResponse({ success: true });
+  }
+});
+
+// Initialize auth state from storage
+async function initAuthState() {
+  try {
+    const result = await chrome.storage.local.get(['authState', 'isAuthenticated']);
+    if (result.isAuthenticated && result.authState) {
+      currentAuthState = result.authState;
+      isAuthenticated = true;
+      console.log('Loaded auth state:', currentAuthState?.email);
+    }
+  } catch (error) {
+    console.error('Failed to load auth state:', error);
+  }
+}
+
+function addTrackingToCompose(el: HTMLElement) {
+  // Only add tracking if user is authenticated and element doesn't already have tracking
+  if (!isAuthenticated || el.querySelector('.tracking-toggle')) {
+    return;
+  }
+
+  // Find the compose toolbar
+  const toolbar = el.querySelector('[aria-label="more send options"]')?.parentElement;
+  if (!toolbar) return;
+
+  // Create tracking toggle button
+  const trackingToggle = document.createElement('div');
+  trackingToggle.className = 'tracking-toggle';
+  trackingToggle.innerHTML = `
+    <button style="
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    ">
+      📧 Tracking ON
+    </button>
+  `;
+
+  toolbar.appendChild(trackingToggle);
+}
+
+// Update tracking UI based on auth state
+function updateTrackingUI() {
+  const composeElements = document.querySelectorAll('[role="dialog"][aria-label*="compose"]');
+  composeElements.forEach((el) => {
+    const htmlEl = el as HTMLElement;
+    if (isAuthenticated) {
+      addTrackingToCompose(htmlEl);
+    } else {
+      removeTrackingFromCompose(htmlEl);
+    }
+  });
+}
+
+function removeTrackingFromCompose(el: HTMLElement) {
+  const existingToggle = el.querySelector('.tracking-toggle');
+  if (existingToggle) {
+    existingToggle.remove();
+  }
+}
+
+function cleanupTracking() {
+  document.querySelectorAll('.tracking-toggle').forEach(el => el.remove());
+  composeRegistry.clear();
+}
