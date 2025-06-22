@@ -42,10 +42,10 @@ export default function SignUp() {
         <div className="flex-1 flex flex-col">
           <div className="p-3">
             <Image
-              src={
-                resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"
-              }
+              src={resolvedTheme === "dark" ? "/logo.png" : "/logo.png"}
               alt="Logo"
+              width={32}
+              height={32}
               className="h-8 w-auto"
             />
           </div>

@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   LucideIcon,
   Settings,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
@@ -41,11 +41,7 @@ export default function Sidebar() {
   return (
     <div className="w-56 transition-all bg-gradient-to-r from-gray-100 to-gray-100 dark:from-gray-800 dark:to-gray-900 h-full">
       <div className="p-2 h-12">
-        <Image
-          src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
-          alt="Logo"
-          className="h-8 w-auto"
-        />
+        <Image src={"/logo.png"} alt="Logo" width={180} height={30} />
       </div>
       <hr />
       <div className="flex flex-col p-3 gap-5">
