@@ -1,18 +1,17 @@
 "use client";
 import {
   BarChart2,
-  GitGraph,
   HelpCircle,
   LayoutDashboard,
-  LogIn,
   LucideIcon,
   Settings,
   UserPlus,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SidebarItem {
   label: string;
@@ -25,7 +24,10 @@ export default function Sidebar() {
   const [mount, setMount] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => setMount(true));
+  useEffect(() => {
+    setMount(true);
+  }, []);
+
   if (!mount) return null;
 
   const sidebarItems: SidebarItem[] = [
@@ -39,11 +41,7 @@ export default function Sidebar() {
   return (
     <div className="w-56 transition-all bg-gradient-to-r from-gray-100 to-gray-100 dark:from-gray-800 dark:to-gray-900 h-full">
       <div className="p-2 h-12">
-        <img
-          src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
-          alt="Logo"
-          className="h-8 w-auto"
-        />
+        <Image src={"/logo.png"} alt="Logo" width={180} height={30} />
       </div>
       <hr />
       <div className="flex flex-col p-3 gap-5">

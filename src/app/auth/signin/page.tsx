@@ -1,120 +1,192 @@
 "use client";
+import AuthHeader from "@/app/auth/components/auth-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { loginUser } from "@/lib/api";
-import { useTheme } from "next-themes";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
-import React, { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { toast, Toaster } from "sonner";
 
-export default function signIn() {
-  const { resolvedTheme } = useTheme();
+export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  console.log("resolvedTheme ", resolvedTheme);
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     try {
       const res = await loginUser(email, password);
-      console.log("Login Success:", res);
       if (res.status === "success") {
-        console.log("code is here ");
-
         localStorage.setItem("authToken", res.data);
-        setMessage("Login successful!");
-        setError("");
+        toast.success("Login successful!");
         router.push("/dashboard");
       } else {
-        console.log("code is here in error mode ");
-        // setError("Invalid credentials or server error");
-        setMessage("");
+        toast.error("Invalid credentials.");
       }
-    } catch (err: any) {
-      console.error("Login Failed:", err);
-      setError("Invalid credentials or server error");
-      setMessage("");
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex min-h-screen w-full">
-      {" "}
-      <div className="flex-1 flex flex-col">
-        <div className="flex p-3">
-          <img
-            src={
-              resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"
-            }
-            alt="Logo"
-            className="h-8 w-auto"
-          />
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-center  px-4 min-h-screen">
+        {/* Header */}
+        <div className="w-full ">
+          <AuthHeader />
         </div>
-        <div className="flex-1 h-screen flex justify-center items-center ">
-          <div className="w-1/2 flex flex-col gap-4 p-8 bg-white dark:bg-gray-900 rounded-lg shadow-md">
-            <div className=" flex flex-col gap-1">
-              <p className="text-2xl font-semibold text-center">Sign In</p>
-              <p className="text-sm text-center text-gray-600 dark:text-gray-300">
-                some small description
-              </p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">Email</p>
+        <Toaster richColors position="top-right" />
+
+        {/* Sign In Form */}
+        <div className="w-full max-w-md mx-auto flex-1 flex flex-col justify-center animate-fade-in">
+          <div className={"flex flex-col items-center mb-6 gap-2"}>
+            <p className="text-4xl font-semibold text-center text-primary">
+              Sign In
+            </p>
+            <p className="text-lg text-center text-muted-text">
+              Open Smarter. Reply Faster.
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="email">Email</Label>
               <Input
+                id="email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="text-black rounded-md mt-1"
+                autoComplete="email"
               />
             </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">Password</p>
+            <div>
+              <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                type="password"
+                className="text-black rounded-md mt-1"
+                autoComplete="current-password"
               />
             </div>
-            <div className="flex flex-row justify-center mt-2">
-              <Button variant="outline" type="submit" className="w-full">
-                Get Started
-              </Button>
-            </div>
-            <div className="flex flex-row justify-center mt-2">
-              <p>
-                Create new account?{" "}
-                <Link href="/auth/signup" className="text-blue-600">
-                  Sign up
-                </Link>
-              </p>
-            </div>
-            {message && <p className="text-green-600 text-sm">{message}</p>}
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-          </div>
-        </div>
-        <div className="flex justify-between text-xs text-gray-300 mt-auto px-4 pb-2">
-          <p className="text-gray-700 dark:text-gray-200">@ MailTracker 2025</p>
-          <p className="text-gray-500 dark:text-gray-400">
-            help@mailtracker.com
+            {/* <div className="flex justify-between items-center">
+              <Link
+                href="#"
+                className="text-sm text-primary hover:underline transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div> */}
+            <Button
+              type="submit"
+              disabled={!email || !password}
+              className="w-full bg-primary cursor-pointer text-primary-text rounded-md py-2 hover:bg-primary-hover transition-colors"
+            >
+              Sign In
+            </Button>
+            {/* {message && <p className="text-green-600 text-center">{message}</p>}
+            {error && <p className="text-red-600 text-center">{error}</p>} */}
+          </form>
+          <p className="text-center mt-6 text-sm text-muted-text">
+            Don’t have an account?{" "}
+            <Link
+              href="/auth/signup"
+              className="text-primary hover:underline transition-colors"
+            >
+              Sign up
+            </Link>
           </p>
         </div>
+
+        {/* Footer */}
+        <footer className="w-full  text-center py-3 text-xs  bg-white flex flex-row justify-between items-center px-4">
+          <p>© {new Date().getFullYear()} Promptping. All rights reserved.</p>
+          <p>kshitijdumbre2001@gmail.com</p>
+        </footer>
       </div>
-      <div className="flex-1 flex items-center justify-center overflow-hidden p-2">
+
+      {/* Right Side Background */}
+      <div className="hidden md:flex w-1/2 relative items-center justify-center overflow-hidden">
         <img
-          src="/auth-image4.png"
-          alt="Dashboard Illustration"
-          className="w-full h-full object-contain rounded-2xl"
+          src="/auth-background.jpg"
+          alt="Promptping background"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
         />
+
+        <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/10 z-0" />
+
+        <div className="relative z-10 w-full h-full flex items-center justify-center px-8">
+          <div
+            className="rounded-xl p-10 max-w-md w-full text-center text-white shadow-xl backdrop-blur-sm"
+            style={{
+              background:
+                "linear-gradient(to bottom right, rgba(0, 0, 0, 0.7), rgba(14, 165, 233, 0.5))",
+            }}
+          >
+            <h2 className="text-4xl font-bold mb-4 drop-shadow-lg animate-slide-down">
+              Welcome to <span className="gradient-text">Promptping</span>
+            </h2>
+            <p className="text-lg text-blue-100 animate-fade-in-delay">
+              Track your emails, analyze engagement, and boost your productivity
+              with a professional, privacy-first dashboard.
+            </p>
+          </div>
+        </div>
+
+        <style jsx global>{`
+          @keyframes fade-in {
+            0% {
+              opacity: 0;
+              transform: translateY(24px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .animate-fade-in {
+            animation: fade-in 0.7s ease-out both;
+          }
+
+          @keyframes slide-down {
+            0% {
+              opacity: 0;
+              transform: translateY(-32px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .animate-slide-down {
+            animation: slide-down 0.8s ease-out both;
+          }
+
+          @keyframes fade-in-delay {
+            0% {
+              opacity: 0;
+            }
+            100% {
+              opacity: 1;
+            }
+          }
+          .animate-fade-in-delay {
+            animation: fade-in-delay 1.2s 0.4s both;
+          }
+
+          .gradient-text {
+            background: linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+        `}</style>
       </div>
-    </form>
+    </div>
   );
 }

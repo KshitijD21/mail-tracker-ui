@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { registerUser } from "@/lib/api";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import React, { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 interface AuthFormProps {
   mode: "Signup" | "Login";
