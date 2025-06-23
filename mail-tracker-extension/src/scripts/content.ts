@@ -492,35 +492,56 @@ function addAIReplyButton() {
   const replyForwardContainer = document.querySelector('[aria-label="Reply"] [role="button"]')?.closest('div')?.parentElement;
 
   if (replyForwardContainer && !replyForwardContainer.querySelector('.ai-reply-button')) {
+    // Create AI Reply button with modern styling
     const aiButton = document.createElement('span');
     aiButton.className = 'ai-reply-button';
     aiButton.innerHTML = `
-      <span role="button" style="
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      <button style="
+        background: linear-gradient(45deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
         color: white;
         border: none;
-        border-radius: 20px;
-        padding: 6px 14px;
-        font-size: 14px;
-        font-weight: 500;
+        border-radius: 24px;
+        padding: 8px 20px;
+        font-size: 13px;
+        font-weight: 600;
         cursor: pointer;
-        margin-left: 8px;
+        margin-left: 12px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        transition: all 0.2s ease;
+        gap: 8px;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         user-select: none;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.025em;
       "
-      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.25)'"
-      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.2)'"
+      onmouseover="
+        this.style.transform='translateY(-2px) scale(1.02)';
+        this.style.boxShadow='0 4px 20px rgba(99, 102, 241, 0.4)';
+        this.style.background='linear-gradient(45deg, #5b5fd9 0%, #7c3aed 50%, #c026d3 100%)';
+      "
+      onmouseout="
+        this.style.transform='translateY(0) scale(1)';
+        this.style.boxShadow='0 2px 8px rgba(99, 102, 241, 0.3)';
+        this.style.background='linear-gradient(45deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)';
+      "
+      onmousedown="this.style.transform='translateY(0) scale(0.98)'"
+      onmouseup="this.style.transform='translateY(-2px) scale(1.02)'"
       tabindex="0"
       >
-        🤖 Reply with AI
-      </span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M12 2C13.1046 2 14 2.89543 14 4V8C14 9.10457 13.1046 10 12 10C10.8954 10 10 9.10457 10 8V4C10 2.89543 10.8954 2 12 2Z" fill="currentColor"/>
+          <path d="M4 12C4 10.8954 4.89543 10 6 10H8C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14H6C4.89543 14 4 13.1046 4 12Z" fill="currentColor"/>
+          <path d="M14 12C14 10.8954 14.8954 10 16 10H18C19.1046 10 20 10.8954 20 12C20 13.1046 19.1046 14 18 14H16C14.8954 14 14 13.1046 14 12Z" fill="currentColor"/>
+          <path d="M10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16V20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20V16Z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>
+        Reply with AI
+      </button>
     `;
 
-    const button = aiButton.querySelector('span[role="button"]') as HTMLElement;
+    const button = aiButton.querySelector('button') as HTMLElement;
     button.addEventListener('click', () => handleAIReplyClick(button));
 
     replyForwardContainer.appendChild(aiButton);
@@ -635,15 +656,21 @@ async function handleAIReplyClick(button: HTMLElement) {
     const originalText = button.innerHTML;
     button.innerHTML = `
       <span style="
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255,255,255,0.3);
-        border-radius: 50%;
-        border-top-color: white;
-        animation: spin 1s ease-in-out infinite;
-      "></span>
-      Generating...
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        <span style="
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: white;
+          animation: spin 1s linear infinite;
+        "></span>
+        Generating response...
+      </span>
     `;
     button.style.pointerEvents = 'none';
 
@@ -689,12 +716,19 @@ async function handleAIReplyClick(button: HTMLElement) {
       } else {
         errorMessage += 'Please check your connection and try again.';
       }
-    }
-
-    alert(errorMessage);
+    }    alert(errorMessage);
 
     // Reset button
-    button.innerHTML = '🤖 Reply with AI';
+    button.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+        <path d="M12 2C13.1046 2 14 2.89543 14 4V8C14 9.10457 13.1046 10 12 10C10.8954 10 10 9.10457 10 8V4C10 2.89543 10.8954 2 12 2Z" fill="currentColor"/>
+        <path d="M4 12C4 10.8954 4.89543 10 6 10H8C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14H6C4.89543 14 4 13.1046 4 12Z" fill="currentColor"/>
+        <path d="M14 12C14 10.8954 14.8954 10 16 10H18C19.1046 10 20 10.8954 20 12C20 13.1046 19.1046 14 18 14H16C14.8954 14 14 13.1046 14 12Z" fill="currentColor"/>
+        <path d="M10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16V20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20V16Z" fill="currentColor"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      </svg>
+      Reply with AI
+    `;
     button.style.pointerEvents = 'auto';
   }
 }

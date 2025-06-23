@@ -15,7 +15,7 @@ A Chrome extension that tracks email opens in Gmail with React TypeScript popup.
 
 When you're viewing an email in Gmail and logged into the extension:
 
-1. **AI Reply Button**: A "🤖 Reply with AI" button appears below each email
+1. **AI Reply Button**: A sleek "Reply with AI" button with a modern gradient appears next to Reply/Forward buttons
 2. **Content Extraction**: Automatically extracts the email content (removing quotes and signatures)
 3. **AI Processing**: Sends the email content to the backend AI service
 4. **Smart Integration**:
@@ -59,7 +59,7 @@ npm run build
 2. Click the extension icon in toolbar
 3. Login with your credentials or create an account
 4. **Email Tracking**: Compose an email - tracking will be enabled automatically
-5. **AI Reply**: Open any email and click the "🤖 Reply with AI" button to generate an AI response
+5. **AI Reply**: Open any email and click the sleek "Reply with AI" button to generate an AI response
 
 ## Development
 
@@ -123,7 +123,7 @@ dist/              # Built extension scripts
 
 1. **Authentication**: Make sure you're logged in via the extension popup
 2. **API Connection**: Check browser console for network errors
-3. **Gmail Detection**: The button appears below email content - look for "🤖 Reply with AI"
+3. **Gmail Detection**: The button appears next to Reply/Forward buttons - look for "Reply with AI"
 4. **Content Extraction**: If getting "Could not extract email content", try refreshing Gmail
 
 ### Common Issues
