@@ -240,7 +240,19 @@ export default function Home() {
                       className="border border-gray-100 hover:cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => {
                         const id = row.original.code;
-                        router.push(`/dashboard/${id}`);
+                        const email = encodeURIComponent(
+                          row.original.recipientEmail
+                        );
+                        const subject = encodeURIComponent(
+                          row.original.subject
+                        );
+                        const sentAt = encodeURIComponent(
+                          row.original.createdAt
+                        );
+                        const totalOpens = row.original.totalOpens;
+                        router.push(
+                          `/dashboard/${id}?email=${email}&subject=${subject}&sentAt=${sentAt}&opens=${totalOpens}`
+                        );
                       }}
                     >
                       {row.getVisibleCells().map((cell) => (

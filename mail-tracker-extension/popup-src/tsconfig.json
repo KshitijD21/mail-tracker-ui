@@ -1,0 +1,31 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../popup/dist",
+        "rootDir": ".",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@/components/*": [
+                "src/components/*"
+            ],
+            "@/services/*": [
+                "src/services/*"
+            ],
+            "@/types/*": [
+                "src/types/*"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "index.html"
+    ],
+    "exclude": [
+        "../node_modules",
+        "../dist",
+        "../popup/dist"
+    ]
+}

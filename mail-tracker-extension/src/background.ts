@@ -1,34 +1,15 @@
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.action.setBadgeText({ text: "OFF" });
+  console.log('Mail Tracker extension installed');
 });
 
-const gmailUrl = "https://mail.google.com/";
+// Handle messages from popup and content script
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  console.log('Background received message:', message);
 
-chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab.url) return;
-
-  if (tab.url.startsWith(gmailUrl)) {
-    const prevState = await chrome.action.getBadgeText({ tabId: tab.id });
-    const nextState = prevState === "ON" ? "OFF" : "ON";
-
-    await chrome.action.setBadgeText({ tabId: tab.id, text: nextState });
-
-    if (nextState === "ON") {
-      await chrome.scripting.insertCSS({
-        files: ["focus-mode.css"],
-        target: { tabId: tab.id! },
-      });
-
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id! },
-        files: ["scripts/content.js"],
-      });
-    } else {
-      await chrome.scripting.removeCSS({
-        files: ["focus-mode.css"],
-        target: { tabId: tab.id! },
-      });
-      chrome.tabs.sendMessage(tab.id!, { action: "cleanup" });
-    }
+  if (message.action === 'getAuthState') {
+    // Relay auth state requests if needed
+    sendResponse({ success: true });
   }
+
+  return true; // Keep message channel open for async responses
 });

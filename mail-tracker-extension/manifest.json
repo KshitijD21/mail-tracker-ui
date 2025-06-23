@@ -3,25 +3,33 @@
   "name": "Mail Tracker",
   "version": "1.0",
   "description": "Inject tracking pixel into Gmail emails",
-  "host_permissions": ["https://mail.google.com/"],
+  "host_permissions": [
+    "https://mail.google.com/"
+  ],
   "content_scripts": [
     {
-      "js": ["dist/scripts/content.global.js"],
+      "js": [
+        "dist/scripts/content.global.js"
+      ],
       "matches": [
         "https://mail.google.com/*"
       ]
     }
   ],
   "action": {
-
-     "default_icon": {
+    "default_popup": "popup/dist/popup-src/index.html",
+    "default_icon": {
       "16": "icons/icon48.png"
     }
   },
-    "background": {
+  "background": {
     "service_worker": "dist/background.global.js"
   },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
   "commands": {
     "_execute_action": {
       "suggested_key": {

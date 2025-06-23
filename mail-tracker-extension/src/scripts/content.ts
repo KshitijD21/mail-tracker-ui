@@ -1,12 +1,16 @@
-import { error } from "console";
 import { generateRandomKey, generateTrackingId } from "./keyGenerate";
-import { Boxes } from "lucide-react";
-import { json } from "stream/consumers";
-import { promises } from "dns";
 
-// const token = localStorage.getItem("authToken");
-const token =
-  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0NzcwMjE0MiwiZXhwIjoxNzQ5NTAyMTQyfQ.VFHdqwKLseOge5A20zP_6YKwkZYrEkDrc70U_6mqM9k";
+// Function to get auth token from Chrome storage
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const result = await chrome.storage.local.get(['authState', 'tempToken']);
+    const token = result.tempToken || result.authState?.token;
+    return token || null;
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+}
 
 interface TrackingId {
   trackingId: string;
@@ -136,7 +140,7 @@ function attachTrackerOnSendButton() {
       );
 
       if (box != undefined) {
-        registerTrackingId(box);
+        await registerTrackingId(box);
       } else {
         console.warn("❌ ComposeBox creation failed");
       }
@@ -146,7 +150,14 @@ function attachTrackerOnSendButton() {
   });
 }
 
-function registerTrackingId(box: ComposeBox) {
+async function registerTrackingId(box: ComposeBox) {
+  const token = await getAuthToken();
+
+  if (!token) {
+    console.warn('❌ No auth token available. Cannot register tracking ID.');
+    return;
+  }
+
   const payload = {
     trackingObject: box.trackingObject,
     to: box.toInput,
@@ -204,12 +215,13 @@ function insertImageIntoEmail(trackingId: string, element: HTMLElement) {
   element.appendChild(img);
 }
 
-function getEmailBodyContainers(): HTMLElement {
-  const emailBodies = document.querySelector(
-    '[aria-label="Message Body"][contenteditable="true"]'
-  ) as HTMLElement;
-  return emailBodies;
-}
+// Unused function - can be removed or used later
+// function getEmailBodyContainers(): HTMLElement {
+//   const emailBodies = document.querySelector(
+//     '[aria-label="Message Body"][contenteditable="true"]'
+//   ) as HTMLElement;
+//   return emailBodies;
+// }
 
 // function insertImageIntoEmail() {
 //   const composeButton = document.querySelector(
@@ -267,7 +279,9 @@ function highlightGmailHeader() {
 }
 
 const sendButtonObserver = new MutationObserver(() => {
-  attachTrackerOnSendButton();
+  if (isAuthenticated) {
+    attachTrackerOnSendButton();
+  }
 });
 
 sendButtonObserver.observe(document.body, {
@@ -278,6 +292,16 @@ sendButtonObserver.observe(document.body, {
 const headerObserver = new MutationObserver(() => {
   highlightGmailHeader();
 });
+
+// Initialize extension
+async function initExtension() {
+  await initAuthState();
+  highlightGmailHeader();
+  updateTrackingUI();
+}
+
+// Start the extension
+initExtension();
 
 headerObserver.observe(document.body, {
   childList: true,
@@ -300,3 +324,120 @@ headerObserver.observe(document.body, {
 // });
 
 // http://localhost:8080/track/6dc553055dfb0d013fc0fb99bee829bc41674d122701469afadc59c02625cad0
+
+// Auth state management
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  avatar: string;
+  token: string;
+}
+
+let currentAuthState: User | null = null;
+let isAuthenticated = false;
+
+// Listen for auth state changes from popup
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'AUTH_STATE_CHANGED') {
+    currentAuthState = message.payload.user;
+    isAuthenticated = message.payload.isAuthenticated;
+
+    console.log('Auth state updated:', { isAuthenticated, user: currentAuthState?.email });
+
+    // Update UI based on auth state
+    updateTrackingUI();
+    sendResponse({ success: true });
+  }
+
+  // Legacy support for old message format
+  if (message.action === 'authStateChanged') {
+    currentAuthState = message.authData;
+    isAuthenticated = !!message.authData;
+
+    console.log('Auth state updated (legacy):', { isAuthenticated, user: currentAuthState?.email });
+
+    // Update UI based on auth state
+    updateTrackingUI();
+    sendResponse({ success: true });
+  }
+
+  if (message.action === 'cleanup') {
+    // Handle cleanup when extension is turned off
+    cleanupTracking();
+    sendResponse({ success: true });
+  }
+});
+
+// Initialize auth state from storage
+async function initAuthState() {
+  try {
+    const result = await chrome.storage.local.get(['authState', 'isAuthenticated']);
+    if (result.isAuthenticated && result.authState) {
+      currentAuthState = result.authState;
+      isAuthenticated = true;
+      console.log('Loaded auth state:', currentAuthState?.email);
+    }
+  } catch (error) {
+    console.error('Failed to load auth state:', error);
+  }
+}
+
+function addTrackingToCompose(el: HTMLElement) {
+  // Only add tracking if user is authenticated and element doesn't already have tracking
+  if (!isAuthenticated || el.querySelector('.tracking-toggle')) {
+    return;
+  }
+
+  // Find the compose toolbar
+  const toolbar = el.querySelector('[aria-label="more send options"]')?.parentElement;
+  if (!toolbar) return;
+
+  // Create tracking toggle button
+  const trackingToggle = document.createElement('div');
+  trackingToggle.className = 'tracking-toggle';
+  trackingToggle.innerHTML = `
+    <button style="
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    ">
+      📧 Tracking ON
+    </button>
+  `;
+
+  toolbar.appendChild(trackingToggle);
+}
+
+// Update tracking UI based on auth state
+function updateTrackingUI() {
+  const composeElements = document.querySelectorAll('[role="dialog"][aria-label*="compose"]');
+  composeElements.forEach((el) => {
+    const htmlEl = el as HTMLElement;
+    if (isAuthenticated) {
+      addTrackingToCompose(htmlEl);
+    } else {
+      removeTrackingFromCompose(htmlEl);
+    }
+  });
+}
+
+function removeTrackingFromCompose(el: HTMLElement) {
+  const existingToggle = el.querySelector('.tracking-toggle');
+  if (existingToggle) {
+    existingToggle.remove();
+  }
+}
+
+function cleanupTracking() {
+  document.querySelectorAll('.tracking-toggle').forEach(el => el.remove());
+  composeRegistry.clear();
+}

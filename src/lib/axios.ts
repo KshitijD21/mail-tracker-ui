@@ -3,7 +3,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL, // Make sure this is set
-  withCredentials: true, // Optional: for cookies (JWT, sessions)
+  // withCredentials: true, // Optional: for cookies (JWT, sessions)
   timeout: 10000, // Optional: timeout in ms
 });
 
