@@ -5,37 +5,39 @@ import Image from "next/image";
 
 export default function HeroSection() {
   return (
-    <section className="w-full px-4 md:px-6 py-8 md:py-10 my-5 bg-white">
+    <section className="w-full px-4 md:px-6 py-8 md:py-10 my-5 bg-white mt-7">
       <div className="relative w-full h-[90vh] rounded-lg border border-gray-200 p-6 bg-[#F6F6F6] overflow-hidden">
-        {/* Floating Images */}
+        {/* Floating Feature Images */}
         <Image
           src="/gmail-open.png"
-          alt="Top Left"
-          width={400}
-          height={400}
-          className="absolute top-4 left-4 rotate-[-10deg] rounded-2xl w-[40vw] max-w-[400px] hidden sm:block"
+          alt="Real-Time Email Opens"
+          width={300}
+          height={300}
+          className="absolute top-4 left-4 rotate-[-12deg] rounded-2xl  shadow-2xl hidden sm:block"
         />
 
         <Image
-          src="/gmail-open.png"
-          alt="Top Right"
-          width={400}
-          height={400}
-          className="absolute top-10 right-6 rotate-[8deg] rounded-2xl w-[40vw] max-w-[400px] hidden sm:block"
+          src="/ai reply.png"
+          alt="AI Powered Replies"
+          width={300}
+          height={300}
+          className="absolute top-16 right-6 rotate-[15deg] rounded-2xl  shadow-2xl hidden sm:block"
         />
+
         <Image
-          src="/gmail-open.png"
-          alt="Bottom Left"
-          width={400}
-          height={400}
-          className="absolute bottom-8 left-4 rotate-[12deg] rounded-2xl w-[40vw] max-w-[400px] hidden sm:block"
+          src="/follow up.png"
+          alt="Follow Up Features"
+          width={300}
+          height={300}
+          className="absolute bottom-10 left-3 rotate-[8deg] rounded-2xl  shadow-2xl hidden sm:block"
         />
+
         <Image
           src="/bargraph.png"
-          alt="Bottom Right"
-          width={400}
-          height={400}
-          className="absolute bottom-0 right-0 rotate-[0deg] rounded-2xl w-[40vw] max-w-[400px] hidden sm:block"
+          alt="Analytics Dashboard"
+          width={300}
+          height={300}
+          className="absolute bottom-4 right-2 rotate-[-6deg] rounded-2xl  shadow-2xl hidden sm:block"
         />
 
         {/* Content */}

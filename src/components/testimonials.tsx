@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Quote } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Quote } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const testimonials = [
   {
@@ -52,7 +52,7 @@ export default function Testimonials() {
   const t = testimonials[index];
 
   return (
-    <section className="bg-white py-20 px-6">
+    <section className="bg-white py-10 px-6">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-4xl font-bold mb-2">Testimonials</h2>
         <p className="text-gray-600 text-lg mb-10">What our users are saying</p>
