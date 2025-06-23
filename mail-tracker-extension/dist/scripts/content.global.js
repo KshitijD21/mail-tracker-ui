@@ -23,7 +23,16 @@
   }
 
   // src/scripts/content.ts
-  var token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0NzcwMjE0MiwiZXhwIjoxNzQ5NTAyMTQyfQ.VFHdqwKLseOge5A20zP_6YKwkZYrEkDrc70U_6mqM9k";
+  async function getAuthToken() {
+    try {
+      const result = await chrome.storage.local.get(["authState", "tempToken"]);
+      const token = result.tempToken || result.authState?.token;
+      return token || null;
+    } catch (error) {
+      console.error("Failed to get auth token:", error);
+      return null;
+    }
+  }
   var composeRegistry = /* @__PURE__ */ new Map();
   function createComposeBox(el, trackingId, k, u, t) {
     const id = el.getAttribute("data-compose-id");
@@ -100,7 +109,7 @@
           t
         );
         if (box != void 0) {
-          registerTrackingId(box);
+          await registerTrackingId(box);
         } else {
           console.warn("\u274C ComposeBox creation failed");
         }
@@ -108,7 +117,12 @@
       });
     });
   }
-  function registerTrackingId(box) {
+  async function registerTrackingId(box) {
+    const token = await getAuthToken();
+    if (!token) {
+      console.warn("\u274C No auth token available. Cannot register tracking ID.");
+      return;
+    }
     const payload = {
       trackingObject: box.trackingObject,
       to: box.toInput,
@@ -187,11 +201,18 @@
   });
   var currentAuthState = null;
   var isAuthenticated = false;
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === "AUTH_STATE_CHANGED") {
+      currentAuthState = message.payload.user;
+      isAuthenticated = message.payload.isAuthenticated;
+      console.log("Auth state updated:", { isAuthenticated, user: currentAuthState?.email });
+      updateTrackingUI();
+      sendResponse({ success: true });
+    }
     if (message.action === "authStateChanged") {
       currentAuthState = message.authData;
       isAuthenticated = !!message.authData;
-      console.log("Auth state updated:", { isAuthenticated, user: currentAuthState?.email });
+      console.log("Auth state updated (legacy):", { isAuthenticated, user: currentAuthState?.email });
       updateTrackingUI();
       sendResponse({ success: true });
     }

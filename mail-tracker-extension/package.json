@@ -1,0 +1,33 @@
+{
+  "name": "mail-tracker-extension",
+  "version": "1.0.0",
+  "description": "## Testing the Extension",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:popup && npm run build:extension",
+    "build:popup": "vite build",
+    "build:extension": "tsup",
+    "dev:popup": "vite",
+    "dev:extension": "tsup --watch",
+    "dev": "npm run dev:extension",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/chrome": "^0.0.326",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
+    "axios": "^1.10.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "tsup": "^8.5.0"
+  }
+}

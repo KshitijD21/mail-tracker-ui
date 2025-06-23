@@ -3,7 +3,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // Handle messages from popup and content script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   console.log('Background received message:', message);
 
   if (message.action === 'getAuthState') {

@@ -1,8 +1,16 @@
 import { generateRandomKey, generateTrackingId } from "./keyGenerate";
 
-// const token = localStorage.getItem("authToken");
-const token =
-  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2N2Y5OTAzZWZmZTE5MTNiYjNhNTMwYzciLCJzdWIiOiJrc2hpdGlqQGdtYWlsLmNvbSIsImlhdCI6MTc0NzcwMjE0MiwiZXhwIjoxNzQ5NTAyMTQyfQ.VFHdqwKLseOge5A20zP_6YKwkZYrEkDrc70U_6mqM9k";
+// Function to get auth token from Chrome storage
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const result = await chrome.storage.local.get(['authState', 'tempToken']);
+    const token = result.tempToken || result.authState?.token;
+    return token || null;
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+}
 
 interface TrackingId {
   trackingId: string;
@@ -132,7 +140,7 @@ function attachTrackerOnSendButton() {
       );
 
       if (box != undefined) {
-        registerTrackingId(box);
+        await registerTrackingId(box);
       } else {
         console.warn("❌ ComposeBox creation failed");
       }
@@ -142,7 +150,14 @@ function attachTrackerOnSendButton() {
   });
 }
 
-function registerTrackingId(box: ComposeBox) {
+async function registerTrackingId(box: ComposeBox) {
+  const token = await getAuthToken();
+
+  if (!token) {
+    console.warn('❌ No auth token available. Cannot register tracking ID.');
+    return;
+  }
+
   const payload = {
     trackingObject: box.trackingObject,
     to: box.toInput,
@@ -200,12 +215,13 @@ function insertImageIntoEmail(trackingId: string, element: HTMLElement) {
   element.appendChild(img);
 }
 
-function getEmailBodyContainers(): HTMLElement {
-  const emailBodies = document.querySelector(
-    '[aria-label="Message Body"][contenteditable="true"]'
-  ) as HTMLElement;
-  return emailBodies;
-}
+// Unused function - can be removed or used later
+// function getEmailBodyContainers(): HTMLElement {
+//   const emailBodies = document.querySelector(
+//     '[aria-label="Message Body"][contenteditable="true"]'
+//   ) as HTMLElement;
+//   return emailBodies;
+// }
 
 // function insertImageIntoEmail() {
 //   const composeButton = document.querySelector(
@@ -310,7 +326,7 @@ headerObserver.observe(document.body, {
 // http://localhost:8080/track/6dc553055dfb0d013fc0fb99bee829bc41674d122701469afadc59c02625cad0
 
 // Auth state management
-interface AuthData {
+interface User {
   id: number;
   email: string;
   name: string;
@@ -318,16 +334,28 @@ interface AuthData {
   token: string;
 }
 
-let currentAuthState: AuthData | null = null;
+let currentAuthState: User | null = null;
 let isAuthenticated = false;
 
 // Listen for auth state changes from popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'AUTH_STATE_CHANGED') {
+    currentAuthState = message.payload.user;
+    isAuthenticated = message.payload.isAuthenticated;
+
+    console.log('Auth state updated:', { isAuthenticated, user: currentAuthState?.email });
+
+    // Update UI based on auth state
+    updateTrackingUI();
+    sendResponse({ success: true });
+  }
+
+  // Legacy support for old message format
   if (message.action === 'authStateChanged') {
     currentAuthState = message.authData;
     isAuthenticated = !!message.authData;
 
-    console.log('Auth state updated:', { isAuthenticated, user: currentAuthState?.email });
+    console.log('Auth state updated (legacy):', { isAuthenticated, user: currentAuthState?.email });
 
     // Update UI based on auth state
     updateTrackingUI();

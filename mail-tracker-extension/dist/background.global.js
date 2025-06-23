@@ -4,7 +4,7 @@
   chrome.runtime.onInstalled.addListener(() => {
     console.log("Mail Tracker extension installed");
   });
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     console.log("Background received message:", message);
     if (message.action === "getAuthState") {
       sendResponse({ success: true });
