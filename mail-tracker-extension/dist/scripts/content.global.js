@@ -23,6 +23,31 @@
   }
 
   // src/scripts/content.ts
+  async function callAIResponse(emailBody) {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+    try {
+      const response = await fetch("http://localhost:8080/ai/getResponse", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ emailBody })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      const result = await response.text();
+      return result;
+    } catch (error) {
+      console.error("\u274C AI Response API error:", error);
+      throw error;
+    }
+  }
   async function getAuthToken() {
     try {
       const result = await chrome.storage.local.get(["authState", "tempToken"]);
@@ -186,6 +211,15 @@
     childList: true,
     subtree: true
   });
+  var aiReplyObserver = new MutationObserver(() => {
+    if (isAuthenticated) {
+      addAIReplyButton();
+    }
+  });
+  aiReplyObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   var headerObserver = new MutationObserver(() => {
     highlightGmailHeader();
   });
@@ -270,6 +304,9 @@
         removeTrackingFromCompose(htmlEl);
       }
     });
+    if (isAuthenticated) {
+      addAIReplyButton();
+    }
   }
   function removeTrackingFromCompose(el) {
     const existingToggle = el.querySelector(".tracking-toggle");
@@ -279,7 +316,239 @@
   }
   function cleanupTracking() {
     document.querySelectorAll(".tracking-toggle").forEach((el) => el.remove());
+    document.querySelectorAll(".ai-reply-button").forEach((el) => el.remove());
     composeRegistry.clear();
+  }
+  function addAIReplyButton() {
+    if (!isAuthenticated) return;
+    const replyForwardContainer = document.querySelector('[aria-label="Reply"] [role="button"]')?.closest("div")?.parentElement;
+    if (replyForwardContainer && !replyForwardContainer.querySelector(".ai-reply-button")) {
+      const aiButton = document.createElement("span");
+      aiButton.className = "ai-reply-button";
+      aiButton.innerHTML = `
+      <span role="button" style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-left: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        transition: all 0.2s ease;
+        user-select: none;
+      " 
+      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.25)'"
+      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.2)'"
+      tabindex="0"
+      >
+        \u{1F916} Reply with AI
+      </span>
+    `;
+      const button = aiButton.querySelector('span[role="button"]');
+      button.addEventListener("click", () => handleAIReplyClick(button));
+      replyForwardContainer.appendChild(aiButton);
+      console.log("\u2705 AI Reply button added to email view");
+    }
+  }
+  function insertAIContentIntoReply(aiContent) {
+    const composeBody = document.querySelector('[aria-label="Message Body"][contenteditable="true"]');
+    if (composeBody) {
+      composeBody.innerHTML = "";
+      composeBody.focus();
+      const aiDiv = document.createElement("div");
+      aiDiv.innerHTML = aiContent.replace(/\n/g, "<br>");
+      composeBody.appendChild(aiDiv);
+      const signature = document.createElement("div");
+      signature.innerHTML = '<br><hr style="border: 1px solid #e0e0e0; margin: 10px 0;"><small style="color: #666; font-style: italic;">\u2728 Generated with AI assistance</small>';
+      composeBody.appendChild(signature);
+      composeBody.focus();
+      const range = document.createRange();
+      range.setStart(aiDiv, 0);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      console.log("\u2705 AI content inserted into reply");
+    } else {
+      console.warn("\u26A0\uFE0F Could not find compose body element");
+      showAIResponseModal(aiContent);
+    }
+  }
+  function extractCurrentEmailContent() {
+    const contentSelectors = [
+      // Gmail email body in conversation view
+      '.ii.gt div[dir="ltr"]',
+      ".ii.gt .a3s.aiL",
+      ".ii.gt",
+      // Gmail standalone email view
+      '[role="main"] .a3s.aiL',
+      '[role="main"] .ii.gt',
+      // Fallback selectors
+      ".a3s.aiL",
+      ".gmail_default"
+    ];
+    for (const selector of contentSelectors) {
+      const content = document.querySelector(selector);
+      if (content && content.textContent?.trim()) {
+        let text = content.textContent;
+        text = text.replace(/^On .* wrote:[\s\S]*/gm, "");
+        text = text.replace(/^From:.*?Subject:.*?\n/gms, "");
+        text = text.replace(/_{10,}/g, "");
+        text = text.replace(/^\s*>.*$/gm, "");
+        text = text.replace(/^\s*\|.*$/gm, "");
+        text = text.replace(/^-- \s*$/gm, "");
+        text = text.replace(/^--\s*$/gm, "");
+        text = text.replace(/\n{3,}/g, "\n\n");
+        text = text.trim();
+        if (text.length > 20) {
+          console.log("\u{1F4E7} Extracted email content:", text.substring(0, 100) + "...");
+          return text;
+        }
+      }
+    }
+    const mainContent = document.querySelector('[role="main"]');
+    if (mainContent) {
+      const allText = mainContent.textContent || "";
+      const filteredText = allText.split("\n").filter((line) => {
+        const trimmed = line.trim();
+        return trimmed.length > 0 && !trimmed.match(/^(Reply|Forward|Archive|Delete|Mark as read|Show details)$/i) && !trimmed.match(/^(to|cc|bcc):?\s*$/i) && !trimmed.match(/^\d{1,2}:\d{2}\s*(AM|PM)?$/i) && trimmed.length > 5;
+      }).join("\n").trim();
+      console.log("\u{1F4E7} Fallback email content extracted:", filteredText.substring(0, 100) + "...");
+      return filteredText;
+    }
+    return "";
+  }
+  async function handleAIReplyClick(button) {
+    try {
+      const emailBody = extractCurrentEmailContent();
+      if (!emailBody.trim()) {
+        alert("Could not extract email content. Please try again.");
+        return;
+      }
+      console.log("\u{1F4E7} Extracted email content for AI:", emailBody.substring(0, 100) + "...");
+      const originalText = button.innerHTML;
+      button.innerHTML = `
+      <span style="
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+      "></span>
+      Generating...
+    `;
+      button.style.pointerEvents = "none";
+      if (!document.getElementById("spinner-styles")) {
+        const style = document.createElement("style");
+        style.id = "spinner-styles";
+        style.textContent = `
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+        document.head.appendChild(style);
+      }
+      const aiResponse = await callAIResponse(emailBody);
+      console.log("\u{1F916} AI response received:", aiResponse.substring(0, 100) + "...");
+      const replyButton = document.querySelector('[aria-label="Reply"] [role="button"]');
+      if (replyButton) {
+        replyButton.click();
+        setTimeout(() => {
+          insertAIContentIntoReply(aiResponse);
+        }, 800);
+      } else {
+        showAIResponseModal(aiResponse);
+      }
+      button.innerHTML = originalText;
+      button.style.pointerEvents = "auto";
+    } catch (error) {
+      console.error("\u274C AI Reply error:", error);
+      let errorMessage = "Failed to generate AI reply. ";
+      if (error instanceof Error) {
+        if (error.message.includes("Authentication required")) {
+          errorMessage += "Please make sure you are logged in to the extension.";
+        } else if (error.message.includes("Server returned")) {
+          errorMessage += "Server error. Please try again later.";
+        } else {
+          errorMessage += "Please check your connection and try again.";
+        }
+      }
+      alert(errorMessage);
+      button.innerHTML = "\u{1F916} Reply with AI";
+      button.style.pointerEvents = "auto";
+    }
+  }
+  function showAIResponseModal(aiContent) {
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+    modal.innerHTML = `
+    <div style="
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    ">
+      <h3 style="margin: 0 0 16px 0; color: #333;">\u{1F916} AI Generated Reply</h3>
+      <div style="
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 16px;
+        background: #f8f9fa;
+        margin-bottom: 16px;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      ">${aiContent}</div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button onclick="this.closest('[style*="position: fixed"]').remove()" style="
+          background: #6c757d;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 16px;
+          cursor: pointer;
+        ">Close</button>
+        <button onclick="
+          navigator.clipboard.writeText(\`${aiContent.replace(/`/g, "\\`")}\`);
+          alert('AI response copied to clipboard!');
+        " style="
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 16px;
+          cursor: pointer;
+        ">Copy to Clipboard</button>
+      </div>
+    </div>
+  `;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
   }
 })();
 //# sourceMappingURL=content.global.js.map

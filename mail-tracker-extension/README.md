@@ -4,19 +4,34 @@ A Chrome extension that tracks email opens in Gmail with React TypeScript popup.
 
 ## Features
 
-- 🔐 **Authentication System**: Mock login with demo accounts
-- 📧 **Email Tracking**: Automatically inject tracking pixels
+- 🔐 **Authentication System**: Real API-based authentication
+- 📧 **Email Tracking**: Automatically inject tracking pixels when sending emails
+- 🤖 **AI Reply**: Generate AI-powered replies to emails
 - 🎨 **Modern UI**: React + TypeScript popup with beautiful design
 - 💾 **Persistent State**: Chrome storage for auth persistence
 - 🔄 **Real-time Updates**: Communication between popup and content script
 
-## Demo Accounts
+## AI Reply Feature
 
-Use these accounts to test the extension:
+When you're viewing an email in Gmail and logged into the extension:
 
-- **john@example.com** / password123
-- **jane@example.com** / password456
-- **demo@mailtracker.com** / demo123
+1. **AI Reply Button**: A "🤖 Reply with AI" button appears below each email
+2. **Content Extraction**: Automatically extracts the email content (removing quotes and signatures)
+3. **AI Processing**: Sends the email content to the backend AI service
+4. **Smart Integration**:
+   - Tries to open Gmail's reply composer automatically
+   - Inserts the AI-generated response
+   - Adds a signature indicating AI assistance
+   - Falls back to a modal if auto-insertion fails
+5. **User Control**: You can edit the AI response before sending
+
+### How It Works
+
+- Detects when emails are opened in Gmail
+- Analyzes email content and removes quoted text
+- Calls the `/ai/getResponse` API endpoint
+- Integrates seamlessly with Gmail's compose interface
+- Provides loading animations and error handling
 
 ## Quick Start
 
@@ -42,8 +57,9 @@ npm run build
 
 1. Navigate to Gmail (https://mail.google.com)
 2. Click the extension icon in toolbar
-3. Login with demo credentials
-4. Compose an email - tracking will be enabled
+3. Login with your credentials or create an account
+4. **Email Tracking**: Compose an email - tracking will be enabled automatically
+5. **AI Reply**: Open any email and click the "🤖 Reply with AI" button to generate an AI response
 
 ## Development
 
@@ -76,8 +92,16 @@ dist/              # Built extension scripts
 ### Authentication Flow
 
 1. User opens popup → React app loads
-2. Login with demo credentials → Auth state saved to Chrome storage
+2. Login with real credentials → Auth state saved to Chrome storage
 3. Content script receives auth update → Gmail UI updated
+
+### AI Reply Implementation
+
+1. Content script detects email views using Gmail DOM selectors
+2. Injects "Reply with AI" button for authenticated users
+3. Extracts email content, removing quotes and signatures
+4. Calls backend AI API with email content
+5. Integrates response into Gmail's compose interface
 
 ### Tracking Implementation
 
@@ -87,22 +111,35 @@ dist/              # Built extension scripts
 
 ### Tech Stack
 
-- React 19 + TypeScript
+- React 19 + TypeScript for popup
 - Vite (popup build) + tsup (extension build)
 - Chrome Extensions Manifest V3
+- Real API integration with axios
 - Chrome Storage API for persistence
 
-## Customization
+## Troubleshooting
 
-### Add New Demo Users
+### AI Reply Not Working
 
-Edit `popup-src/src/services/auth.ts`:
+1. **Authentication**: Make sure you're logged in via the extension popup
+2. **API Connection**: Check browser console for network errors
+3. **Gmail Detection**: The button appears below email content - look for "🤖 Reply with AI"
+4. **Content Extraction**: If getting "Could not extract email content", try refreshing Gmail
 
-```typescript
-const MOCK_USERS: MockUser[] = [
-  // Add new user here
-];
-```
+### Common Issues
+
+- **Button Not Appearing**: Make sure you're viewing an actual email (not inbox list)
+- **Loading Forever**: Check if backend AI service is running
+- **Reply Not Inserting**: Gmail's compose area detection can vary - use the modal fallback
+- **Authentication Errors**: 403 errors indicate you need to log in again
+
+### Debug Mode
+
+Open browser console to see debug logs:
+
+- Email content extraction logs
+- API call results
+- Button placement confirmations
 
 ### Modify UI Styling
 
