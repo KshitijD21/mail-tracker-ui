@@ -129,7 +129,7 @@
       subject: box.subjectInput
     };
     composeRegistry.set(box.trackingObject.trackingId, box);
-    fetch("https://mail-tracker-xy4c.onrender.com/tracking/ids", {
+    fetch("http://localhost:8080/tracking/ids", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

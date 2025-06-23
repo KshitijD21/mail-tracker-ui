@@ -11,10 +11,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-    console.log("Token in localStorage:", token);
+    console.log("🚀 API Request:", {
+      url: `${config.baseURL}${config.url}`,
+      method: config.method?.toUpperCase(),
+      token: token ? "Present" : "Missing"
+    });
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("Request headers:", config.headers);
     }
     return config;
   },
@@ -23,8 +26,21 @@ api.interceptors.request.use(
 
 // Example: Response interceptor for global error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("✅ API Response:", {
+      url: response.config.url,
+      status: response.status,
+      dataLength: Array.isArray(response.data) ? response.data.length : typeof response.data
+    });
+    return response;
+  },
   (error) => {
+    console.error("❌ API Error:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
     // Optional: handle 401/403 globally
     if (error.response?.status === 401) {
       console.error("Unauthorized. Redirecting to login...");

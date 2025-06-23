@@ -9,17 +9,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  Eye,
-  Mail,
-  MoreVertical,
-  Percent,
-  Users,
-} from "lucide-react";
-import StatCard from "./components/stat-card";
+import { ArrowUpDown, ChevronDown, MoreVertical } from "lucide-react";
 
+import LayoutBox from "@/components/layout-box";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +20,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import LayoutBox from "@/components/layout-box";
 import {
   Table,
   TableBody,
@@ -38,30 +28,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { setFollowUp, TrackingLinkEntity } from "@/lib/api";
-import { useDashboardMetricsStore } from "@/store/DashboardMetrics";
-import { useTrackingStore } from "@/store/useTrackingStore";
+import { getAllFollowUps, setFollowUp, TrackingLinkEntity } from "@/lib/api";
 import { DropdownMenuCheckboxItem } from "@radix-ui/react-dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function Home() {
+export default function FollowUpPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const { trackingLinks, fetchTrackingLinks } = useTrackingStore();
-  const { metrics, fetchMetrics } = useDashboardMetricsStore();
+  const [followUpData, setFollowUpData] = useState<TrackingLinkEntity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const handleAddToFollowUp = async (trackingId: string) => {
+  const handleRemoveFromFollowUp = async (trackingId: string) => {
     try {
-      await setFollowUp(trackingId, true);
-      toast.success("Added to follow-up successfully");
+      await setFollowUp(trackingId, false);
+      toast.success("Removed from follow-up successfully");
+      // Refresh the data
+      fetchFollowUpData();
     } catch (error) {
-      console.error("Failed to add to follow-up:", error);
-      toast.error("Failed to add to follow-up");
+      console.error("Failed to remove from follow-up:", error);
+      toast.error("Failed to remove from follow-up");
     }
   };
 
@@ -177,11 +167,11 @@ export default function Home() {
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleAddToFollowUp(email.code);
+                  handleRemoveFromFollowUp(email.code);
                 }}
-                className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600"
               >
-                Add to Follow Up
+                Remove from Follow Up
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -191,7 +181,7 @@ export default function Home() {
   ];
 
   const table = useReactTable<TrackingLinkEntity>({
-    data: trackingLinks,
+    data: followUpData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -207,88 +197,36 @@ export default function Home() {
     },
   });
 
-  // Fetch tracking links when the component mounts
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await fetchTrackingLinks();
-      } catch (error) {
-        console.error("Failed to fetch tracking links:", error);
-      }
-    };
-    fetchData();
+  const fetchFollowUpData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAllFollowUps();
+      setFollowUpData(data);
+    } catch (error) {
+      console.error("Failed to fetch follow-up data:", error);
+      toast.error("Failed to load follow-up items");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // Fetch dashboard metrics
-    const fetchMetricsData = async () => {
-      try {
-        await fetchMetrics();
-      } catch (error) {
-        console.error("Failed to fetch dashboard metrics:", error);
-      }
-    };
-    fetchMetricsData();
-  }, [fetchTrackingLinks, fetchMetrics]);
+  useEffect(() => {
+    fetchFollowUpData();
+  }, []);
 
   return (
     <LayoutBox>
       <div className="flex flex-col mb-6">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 tracking-tight">
-          Dashboard
+          Follow Up
         </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Manage your follow-up emails and track their progress
+        </p>
       </div>
 
-      {/* Dashboard metrics section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-        <div className="transition-shadow duration-300 hover:shadow-xl rounded-xl bg-white dark:bg-gray-900">
-          <StatCard
-            label="Total Emails Sent"
-            value={metrics?.totalEmailsSent}
-            desc="All campaigns, last 30 days"
-            icon={<Mail className="w-7 h-7 text-blue-600" />}
-          />
-        </div>
-        <div className="transition-shadow duration-300 hover:shadow-xl rounded-xl bg-white dark:bg-gray-900">
-          <StatCard
-            label="Email Opens"
-            value={metrics?.totalOpens}
-            desc={`${
-              metrics?.openRate ? `${metrics.openRate}%` : "N/A"
-            } open rate this month`}
-            icon={
-              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600">
-                <Eye className="w-6 h-6 text-white" />
-              </span>
-            }
-          />
-        </div>
-        <div className="transition-shadow duration-300 hover:shadow-xl rounded-xl bg-white dark:bg-gray-900">
-          <StatCard
-            label="Total Contacts"
-            value={metrics?.totalUniqueRecipients}
-            desc="Active in your list"
-            icon={
-              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600">
-                <Users className="w-6 h-6 text-white" />
-              </span>
-            }
-          />
-        </div>
-        <div className="transition-shadow duration-300 hover:shadow-xl rounded-xl bg-white dark:bg-gray-900">
-          <StatCard
-            label="Open Rate"
-            value={metrics?.openRate ? `${metrics.openRate}%` : "N/A"}
-            desc="Compared to last month"
-            icon={
-              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500">
-                <Percent className="w-6 h-6 text-white" />
-              </span>
-            }
-          />
-        </div>
-      </div>
-
-      {/* Tracking Links Table */}
-      <div className="flex flex-col mt-12">
+      {/* Follow Up Table */}
+      <div className="flex flex-col mt-6">
         <div className="w-full">
           {/* Filter & Column Control */}
           <div className="flex items-center py-4">
@@ -367,7 +305,16 @@ export default function Home() {
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows.length ? (
+                {isLoading ? (
+                  <TableRow className="border border-gray-100">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center border border-gray-100"
+                    >
+                      Loading follow-up items...
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows.length ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow
                       key={row.id}
@@ -409,59 +356,15 @@ export default function Home() {
                       colSpan={columns.length}
                       className="h-24 text-center border border-gray-100"
                     >
-                      No results.
+                      No follow-up items found.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-
-          {/* Pagination & Info */}
-          {/* <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="text-muted-foreground flex-1 text-sm">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} row(s) selected.
-            </div>
-            <div className="space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="transition-transform duration-200 hover:scale-105"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="transition-transform duration-200 hover:scale-105"
-              >
-                Next
-              </Button>
-            </div>
-          </div> */}
         </div>
       </div>
     </LayoutBox>
   );
 }
-
-// function getPaginationRowMode():
-//   | ((
-//       table: import("@tanstack/react-table").Table<any>
-//     ) => () => import("@tanstack/react-table").RowModel<any>)
-//   | undefined {
-//   throw new Error("Function not implemented.");
-// }
-
-// function getFilteredRowModel():
-//   | ((
-//       table: import("@tanstack/react-table").Table<any>
-//     ) => () => import("@tanstack/react-table").RowModel<any>)
-//   | undefined {
-//   throw new Error("Function not implemented.");
-// }
