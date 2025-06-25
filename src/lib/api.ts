@@ -67,9 +67,16 @@ export const fetchGoogleOAuthUrl = async () => {
 
 export async function fetchAllTrackingLinks(): Promise<TrackingLinkEntity[]> {
   try {
+    console.log("🔄 Calling fetchAllTrackingLinks...");
     const res = await api.get("/allEmailData");
 
     console.log("📊 fetchAllTrackingLinks response:", res.data);
+
+    // Handle case where response.data might be null or undefined
+    if (!res.data || !Array.isArray(res.data)) {
+      console.warn("⚠️ fetchAllTrackingLinks: Invalid response data", res.data);
+      return [];
+    }
 
     // Optional: pick only fields you need
     const newData = res.data.map((item: TrackingLinkEntity) => ({
@@ -86,17 +93,26 @@ export async function fetchAllTrackingLinks(): Promise<TrackingLinkEntity[]> {
       return newData;
   } catch (err) {
     console.error("❌ fetchAllTrackingLinks error:", err);
+    // Return empty array instead of throwing to prevent crash
     return [];
   }
 }
 
 export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   try {
+    console.log("🔄 Calling fetchDashboardMetrics...");
     const response = await api.get("/fetchDashboardMetrics");
+    console.log("📊 fetchDashboardMetrics response:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ fetchDashboardMetrics error:", error);
-    throw new Error("Failed to fetch dashboard metrics");
+    // Return default values instead of throwing to prevent crash
+    return {
+      totalEmailsSent: 0,
+      totalUniqueRecipients: 0,
+      totalOpens: 0,
+      openRate: 0,
+    };
   }
 }
 
@@ -106,4 +122,44 @@ export async function fetchOpenChartData(trackingId: string, dateRange: { startD
     endDate: dateRange.endDate,
   });
   return res.data;
+}
+
+// Follow-up API endpoints
+export async function setFollowUp(trackingId: string, isFollowUp: boolean): Promise<string> {
+  try {
+    const response = await api.post("/followup/set", null, {
+      params: {
+        trackingId,
+        isFollowUp,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ setFollowUp error:", error);
+    throw new Error("Failed to update follow-up status");
+  }
+}
+
+export async function getAllFollowUps(): Promise<TrackingLinkEntity[]> {
+  try {
+    const response = await api.get("/followup/all");
+    console.log("📊 getAllFollowUps response:", response.data);
+
+    // Process the data to match TrackingLinkEntity interface
+    const followUpData = response.data.map((item: TrackingLinkEntity) => ({
+      id: item.id,
+      recipientEmail: item.recipientEmail,
+      subject: item.subject,
+      totalOpens: item.totalOpens,
+      createdAt: item.createdAt,
+      opened: item.opened,
+      code: item.code,
+    }));
+
+    console.log("📊 getAllFollowUps processed data:", followUpData);
+    return followUpData;
+  } catch (error) {
+    console.error("❌ getAllFollowUps error:", error);
+    throw new Error("Failed to fetch follow-up items");
+  }
 }

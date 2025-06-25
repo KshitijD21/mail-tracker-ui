@@ -54,3 +54,18 @@ export const getUserProfile = async (): Promise<any> => {
     throw error;
   }
 };
+
+// Get AI response for email
+export const getAIResponse = async (emailBody: string): Promise<string> => {
+  try {
+    console.log("🔄 Calling getAIResponse...");
+    const response = await api.post("/ai/getResponse", {
+      emailBody: emailBody,
+    });
+    console.log("🤖 AI Response received:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ getAIResponse error:", error);
+    throw new Error("Failed to get AI response");
+  }
+};
