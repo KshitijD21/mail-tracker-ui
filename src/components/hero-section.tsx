@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HeroSection() {
   return (
@@ -52,9 +53,11 @@ export default function HeroSection() {
             your emails are opened and links are clicked — with rich analytics.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="text-base px-6 py-4" variant="outline">
-              🚀 Get Started Free
-            </Button>
+            <Link href="/auth/signup">
+              <Button className="text-base px-6 py-4" variant="outline">
+                🚀 Get Started Free
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

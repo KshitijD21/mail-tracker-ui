@@ -7,11 +7,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
@@ -160,27 +159,27 @@ export default function Navbar() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-white">
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-medium">{userInfo?.name}</p>
                   <p className="text-xs text-gray-500">{userInfo?.email}</p>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                {/* <DropdownMenuSeparator /> */}
+                {/* <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
                   Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
+                </DropdownMenuItem> */}
+                {/* <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                </DropdownMenuItem> */}
+                {/* <DropdownMenuSeparator /> */}
                 <DropdownMenuItem
                   onClick={handleLogout}
                   className="text-red-600"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  <LogOut className="mr-2 h-4 w-4 text-black" />
+                  <span className=" text-black">Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

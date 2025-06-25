@@ -137,7 +137,7 @@ export default function TrackingDetailPage({
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
+                  <p className="text-sm font-medium  text-muted-foreground">
                     Total Opens
                   </p>
                   <div className="flex items-center gap-2">
