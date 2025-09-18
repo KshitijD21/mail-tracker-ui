@@ -601,7 +601,7 @@ function extractCurrentEmailContent(): string {
       let text = content.textContent;
 
       text = text.replace(/^On .* wrote:[\s\S]*/gm, '');
-      text = text.replace(/^From:.*?Subject:.*?\n/gms, '');
+      text = text.replace(/^From:.*?Subject:.*?\n/gm, '');
       text = text.replace(/_{10,}/g, '');
       text = text.replace(/^\s*>.*$/gm, '');
       text = text.replace(/^\s*\|.*$/gm, '');

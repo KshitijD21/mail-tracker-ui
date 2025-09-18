@@ -36,9 +36,17 @@ interface ChartDataItem {
 export default function TrackingDetailPage({
   params,
 }: {
-  params: { trackingId: string };
+  params: Promise<{ trackingId: string }>;
 }) {
-  const { trackingId } = params;
+  const [trackingId, setTrackingId] = useState<string>("");
+
+  useEffect(() => {
+    async function getParams() {
+      const resolvedParams = await params;
+      setTrackingId(resolvedParams.trackingId);
+    }
+    getParams();
+  }, [params]);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -60,7 +68,7 @@ export default function TrackingDetailPage({
 
   // Fetch chart data
   useEffect(() => {
-    if (dateRange?.from && dateRange?.to) {
+    if (trackingId && dateRange?.from && dateRange?.to) {
       fetchOpenChartData(trackingId, {
         startDate: dateRange.from,
         endDate: dateRange.to,

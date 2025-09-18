@@ -18,12 +18,22 @@ interface ChartProps {
   }[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    color: string;
+    dataKey: string;
+    value: number;
+  }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background border border-border rounded-lg shadow-lg p-3">
         <p className="text-sm font-medium text-foreground mb-2">{`Date: ${label}`}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {`${
               entry.dataKey.charAt(0).toUpperCase() + entry.dataKey.slice(1)

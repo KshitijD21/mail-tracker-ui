@@ -35,7 +35,7 @@ export default function Faq() {
           <AccordionItem value="item-3">
             <AccordionTrigger>Do I need to install anything?</AccordionTrigger>
             <AccordionContent>
-              No. It's browser-based and fully self-serve.
+              No. It&apos;s browser-based and fully self-serve.
             </AccordionContent>
           </AccordionItem>
         </Accordion>

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LogOut, Menu } from "lucide-react";
-import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -24,7 +23,6 @@ export default function Navbar() {
     email: string;
     avatar?: string;
   } | null>(null);
-  const { theme, setTheme } = useTheme();
 
   // Check authentication status
   useEffect(() => {

@@ -25,7 +25,7 @@ export default function SignIn() {
       } else {
         toast.error("Invalid credentials.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong. Please try again.");
     }
   };

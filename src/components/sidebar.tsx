@@ -7,7 +7,6 @@ import {
   Settings,
   UserPlus,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +19,6 @@ interface SidebarItem {
 }
 
 export default function Sidebar() {
-  const { resolvedTheme } = useTheme();
   const [mount, setMount] = useState(false);
   const pathname = usePathname();
 
